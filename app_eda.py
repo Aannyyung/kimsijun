@@ -38,17 +38,15 @@ if "logged_in" not in st.session_state:
     st.session_state.profile_image_url = ""
 
 # ---------------------
-# 홈 페이지 클래스
+# 페이지 클래스 및 함수 정의
 # ---------------------
+
 class Home:
     def __init__(self, login_page, register_page, findpw_page):
-        import streamlit as st
-
         st.title("🏠 Home")
         if st.session_state.get("logged_in"):
             st.success(f"{st.session_state.get('user_email')}님 환영합니다.")
 
-        # population_trends.csv 데이터셋 소개
         st.markdown("""
         ---
         ### 📘 Population Trends 데이터셋 안내
@@ -82,13 +80,6 @@ class Home:
         else:
             st.info("파일을 업로드해야 분석이 가능합니다.")
 
-
-
-        
-
-# ---------------------
-# 로그인 페이지 클래스
-# ---------------------
 class Login:
     def __init__(self):
         st.title("🔐 로그인")
@@ -109,14 +100,10 @@ class Login:
                     st.session_state.profile_image_url = user_info.get("profile_image_url", "")
 
                 st.success("로그인 성공!")
-                time.sleep(1)
-                st.rerun()
-            except Exception:
-                st.error("로그인 실패")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"로그인 실패: {e}")
 
-# ---------------------
-# 회원가입 페이지 클래스
-# ---------------------
 class Register:
     def __init__(self, login_page_url):
         st.title("📝 회원가입")
@@ -139,13 +126,10 @@ class Register:
                 })
                 st.success("회원가입 성공! 로그인 페이지로 이동합니다.")
                 time.sleep(1)
-                st.switch_page(login_page_url)
-            except Exception:
-                st.error("회원가입 실패")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"회원가입 실패: {e}")
 
-# ---------------------
-# 비밀번호 찾기 페이지 클래스
-# ---------------------
 class FindPassword:
     def __init__(self):
         st.title("🔎 비밀번호 찾기")
@@ -155,13 +139,10 @@ class FindPassword:
                 auth.send_password_reset_email(email)
                 st.success("비밀번호 재설정 이메일을 전송했습니다.")
                 time.sleep(1)
-                st.rerun()
-            except:
-                st.error("이메일 전송 실패")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"이메일 전송 실패: {e}")
 
-# ---------------------
-# 사용자 정보 수정 페이지 클래스
-# ---------------------
 class UserInfo:
     def __init__(self):
         st.title("👤 사용자 정보")
@@ -187,26 +168,25 @@ class UserInfo:
             st.image(st.session_state.profile_image_url, width=150)
 
         if st.button("수정"):
-            st.session_state.user_email = new_email
-            st.session_state.user_name = name
-            st.session_state.user_gender = gender
-            st.session_state.user_phone = phone
+            try:
+                st.session_state.user_email = new_email
+                st.session_state.user_name = name
+                st.session_state.user_gender = gender
+                st.session_state.user_phone = phone
 
-            firestore.child("users").child(new_email.replace(".", "_")).update({
-                "email": new_email,
-                "name": name,
-                "gender": gender,
-                "phone": phone,
-                "profile_image_url": st.session_state.get("profile_image_url", "")
-            })
+                firestore.child("users").child(new_email.replace(".", "_")).update({
+                    "email": new_email,
+                    "name": name,
+                    "gender": gender,
+                    "phone": phone,
+                    "profile_image_url": st.session_state.get("profile_image_url", "")
+                })
 
-            st.success("사용자 정보가 저장되었습니다.")
-            time.sleep(1)
-            st.rerun()
+                st.success("사용자 정보가 저장되었습니다.")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"저장 실패: {e}")
 
-# ---------------------
-# 로그아웃 페이지 클래스
-# ---------------------
 class Logout:
     def __init__(self):
         st.session_state.logged_in = False
@@ -218,11 +198,8 @@ class Logout:
         st.session_state.profile_image_url = ""
         st.success("로그아웃 되었습니다.")
         time.sleep(1)
-        st.rerun()
+        st.experimental_rerun()
 
-# ---------------------
-# EDA 페이지 클래스
-# ---------------------
 class EDA:
     def __init__(self):
         st.title("👥 Population Trends EDA")
@@ -237,9 +214,7 @@ class EDA:
 
         tabs = st.tabs(["기초 통계", "연도별 추이", "지역별 분석", "변화량 분석", "시각화"])
 
-        # -----------------------
         # 탭 1: 기초 통계 (세종시 중심 전처리)
-        # -----------------------
         with tabs[0]:
             st.subheader("세종시 데이터 전처리 및 통계")
             sejong_df = df[df['행정구역'].str.contains('세종', na=False)].copy()
@@ -257,9 +232,7 @@ class EDA:
             sejong_df.info(buf=buffer)
             st.text(buffer.getvalue())
 
-        # -----------------------
         # 탭 2: 연도별 추이 + 2035 예측
-        # -----------------------
         with tabs[1]:
             st.subheader("전국 인구 추세 및 2035년 예측")
 
@@ -289,18 +262,16 @@ class EDA:
 
             st.pyplot(plt.gcf())
 
-        # -----------------------
         # 탭 3: 지역별 분석 (최근 5년)
-        # -----------------------
         with tabs[2]:
             st.subheader("최근 5년간 지역별 인구 변화량 및 변화율")
 
-            df = df[df['지역'] != '전국'].copy()
-            df['연도'] = pd.to_numeric(df['연도'], errors='coerce')
-            df['인구'] = pd.to_numeric(df['인구'], errors='coerce').fillna(0).astype(int)
+            df_non_national = df[df['지역'] != '전국'].copy()
+            df_non_national['연도'] = pd.to_numeric(df_non_national['연도'], errors='coerce')
+            df_non_national['인구'] = pd.to_numeric(df_non_national['인구'], errors='coerce').fillna(0).astype(int)
 
-            recent_years = sorted(df['연도'].unique())[-5:]
-            df_recent = df[df['연도'].isin(recent_years)]
+            recent_years = sorted(df_non_national['연도'].unique())[-5:]
+            df_recent = df_non_national[df_non_national['연도'].isin(recent_years)]
 
             grouped = df_recent.groupby(['지역', '연도'])['인구'].sum().unstack()
             grouped['Change'] = (grouped[recent_years[-1]] - grouped[recent_years[0]]) / 1000
@@ -327,75 +298,4 @@ class EDA:
             # 변화율 시각화
             rate_df = grouped.sort_values('Rate (%)', ascending=False)
             plt.figure(figsize=(10, 7))
-            ax2 = sns.barplot(x='Rate (%)', y=rate_df.index, data=rate_df, palette='coolwarm')
-            for i, value in enumerate(rate_df['Rate (%)']):
-                ax2.text(value + 0.1, i, f"{value:.1f}%", va='center')
-            plt.title("Population Growth Rate Over 5 Years (%)")
-            st.pyplot(plt.gcf())
-
-        # -----------------------
-        # 탭 4: 변화량 분석 (Top 100)
-        # -----------------------
-        with tabs[3]:
-            st.subheader("Top 100 Year-over-Year Population Changes")
-
-            df['증감'] = df.groupby('지역')['인구'].diff().fillna(0).astype(int)
-            top_changes = df.reindex(df['증감'].abs().sort_values(ascending=False).index).head(100).copy()
-
-            top_changes['인구'] = top_changes['인구'].apply(lambda x: f"{x:,}")
-            top_changes['증감'] = top_changes['증감'].apply(lambda x: f"{x:,}")
-
-            def highlight_change(val):
-                val_int = int(val.replace(",", ""))
-                if val_int > 0:
-                    return 'background-color: #cce5ff'
-                elif val_int < 0:
-                    return 'background-color: #f8d7da'
-                return ''
-
-            styled_df = top_changes.style.applymap(highlight_change, subset=['증감'])
-            st.dataframe(styled_df, use_container_width=True)
-
-        # -----------------------
-        # 탭 5: 누적 영역 시각화
-        # -----------------------
-        with tabs[4]:
-            st.subheader("연도별 지역별 누적 인구 스택 영역 그래프")
-
-            df['지역'] = df['지역'].map(region_translation)
-            pivot_df = df.pivot_table(index='연도', columns='지역', values='인구', aggfunc='sum').fillna(0).sort_index()
-
-            plt.figure(figsize=(12, 6))
-            pivot_df.plot.area(colormap='tab20', alpha=0.9)
-            plt.title("Population Trend by Region (Stacked Area)")
-            plt.xlabel("Year")
-            plt.ylabel("Population")
-            plt.legend(title="Region", loc='upper left', bbox_to_anchor=(1.0, 1.0))
-            plt.tight_layout()
-
-            st.pyplot(plt.gcf())
-
-
-
-
-# ---------------------
-# 페이지 객체 생성
-# ---------------------
-Page_Login    = st.Page(Login,    title="Login",    icon="🔐", url_path="login")
-Page_Register = st.Page(lambda: Register(Page_Login.url_path), title="Register", icon="📝", url_path="register")
-Page_FindPW   = st.Page(FindPassword, title="Find PW", icon="🔎", url_path="find-password")
-Page_Home     = st.Page(lambda: Home(Page_Login, Page_Register, Page_FindPW), title="Home", icon="🏠", url_path="home", default=True)
-Page_User     = st.Page(UserInfo, title="My Info", icon="👤", url_path="user-info")
-Page_Logout   = st.Page(Logout,   title="Logout",  icon="🔓", url_path="logout")
-Page_EDA      = st.Page(EDA,      title="EDA",     icon="📊", url_path="eda")
-
-# ---------------------
-# 네비게이션 실행
-# ---------------------
-if st.session_state.logged_in:
-    pages = [Page_Home, Page_User, Page_Logout, Page_EDA]
-else:
-    pages = [Page_Home, Page_Login, Page_Register, Page_FindPW]
-
-selected_page = st.navigation(pages)
-selected_page.run()
+            ax2 = sns.barplot(x='Rate (%)', y=rate_df.index, data=rate_df, palette='coolwarm
