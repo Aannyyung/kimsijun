@@ -73,11 +73,11 @@ class Home:
         """)
         uploaded_file = st.file_uploader("📥 population_trends.csv 파일 업로드", type=["csv"])
 
-            # 로그인 되어 있으면 분석 실행
-            if st.session_state.get("logged_in"):
-                EDA(uploaded_file)  # 👉 EDA에 업로더 결과를 전달
-            else:
-                st.info("로그인 후 EDA 분석 기능을 사용할 수 있습니다.")
+        # 로그인 되어 있으면 분석 실행
+        if st.session_state.get("logged_in"):
+            EDA(uploaded_file)  # 👉 EDA에 업로더 결과를 전달
+        else:
+            st.info("로그인 후 EDA 분석 기능을 사용할 수 있습니다.")
         
 
 # ---------------------
