@@ -226,26 +226,28 @@ class EDA:
 
         # -----------------------
         # 탭 1: 기초 통계 (세종시 중심 전처리)
-    with tabs[0]:
-        st.subheader("세종시 데이터 전처리 및 통계")
+        with tabs[0]:
+            st.subheader("세종시 데이터 전처리 및 통계")
 
-        if '행정구역' in df.columns:
-            sejong_df = df[df['행정구역'].astype(str).str.contains('세종', na=False)].copy()
-            sejong_df.replace('-', 0, inplace=True)
+            if '행정구역' in df.columns:
+                sejong_df = df[df['행정구역'].astype(str).str.contains('세종', na=False)].copy()
+                sejong_df.replace('-', 0, inplace=True)
 
-            for col in ['인구', '출생아수(명)', '사망자수(명)']:
-                sejong_df[col] = pd.to_numeric(sejong_df[col], errors='coerce').fillna(0).astype(int)
+                for col in ['인구', '출생아수(명)', '사망자수(명)']:
+                    sejong_df[col] = pd.to_numeric(sejong_df[col], errors='coerce').fillna(0).astype(int)
 
-            st.dataframe(sejong_df)
-            st.subheader("요약 통계 (describe)")
-            st.write(sejong_df.describe())
+                st.dataframe(sejong_df)
+                st.subheader("요약 통계 (describe)")
+                st.write(sejong_df.describe())
 
-            st.subheader("데이터프레임 구조 (info)")
-            buffer = io.StringIO()
-            sejong_df.info(buf=buffer)
-            st.text(buffer.getvalue())
-        else:
-            st.warning("⚠️ 업로드한 데이터에 '행정구역' 컬럼이 없습니다. 세종시 분석을 건너뜁니다.")
+                st.subheader("데이터프레임 구조 (info)")
+                buffer = io.StringIO()
+                sejong_df.info(buf=buffer)
+                st.text(buffer.getvalue())
+            else:
+                st.warning("⚠️ 업로드한 데이터에 '행정구역' 컬럼이 없습니다. 세종시 분석을 건너뜁니다.")
+
+        
 
         # -----------------------
         # 탭 2: 연도별 추이 + 2035 예측
