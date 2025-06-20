@@ -298,4 +298,76 @@ class EDA:
             # 변화율 시각화
             rate_df = grouped.sort_values('Rate (%)', ascending=False)
             plt.figure(figsize=(10, 7))
-            ax2 = sns.barplot(x='Rate (%)', y=rate_df.index, data=rate_df, palette='coolwarm
+            ax2 = sns.barplot(x='Rate (%)', y=rate_df.index, data=rate_df, palette='coolwarm')
+            for i, value in enumerate(rate_df['Rate (%)']):
+                ax2.text(value + 0.1, i, f"{value:.1f}%", va='center')
+            plt.title("Population Growth Rate Over 5 Years (%)")
+            st.pyplot(plt.gcf())
+
+        # 탭 4: 변화량 분석 (Top 100)
+        with tabs[3]:
+            st.subheader("Top 100 Year-over-Year Population Changes")
+
+            df['증감'] = df.groupby('지역')['인구'].diff().fillna(0).astype(int)
+            top_changes = df.reindex(df['증감'].abs().sort_values(ascending=False).index).head(100).copy()
+
+            top_changes['인구'] = top_changes['인구'].apply(lambda x: f"{x:,}")
+            top_changes['증감'] = top_changes['증감'].apply(lambda x: f"{x:,}")
+
+            def highlight_change(val):
+                val_int = int(val.replace(",", ""))
+                if val_int > 0:
+                    return 'background-color: #cce5ff'
+                elif val_int < 0:
+                    return 'background-color: #f8d7da'
+                return ''
+
+            styled_df = top_changes.style.applymap(highlight_change, subset=['증감'])
+            st.dataframe(styled_df, use_container_width=True)
+
+        # 탭 5: 누적 영역 시각화
+        with tabs[4]:
+            st.subheader("연도별 지역별 누적 인구 스택 영역 그래프")
+
+            df['지역'] = df['지역'].map(region_translation)
+            pivot_df = df.pivot_table(index='연도', columns='지역', values='인구', aggfunc='sum').fillna(0).sort_index()
+
+            plt.figure(figsize=(12, 6))
+            pivot_df.plot.area(colormap='tab20', alpha=0.9)
+            plt.title("Population Trend by Region (Stacked Area)")
+            plt.xlabel("Year")
+            plt.ylabel("Population")
+            plt.legend(title="Region", loc='upper left', bbox_to_anchor=(1.0, 1.0))
+            plt.tight_layout()
+
+            st.pyplot(plt.gcf())
+
+# ---------------------
+# 사이드바 메뉴 및 페이지 실행
+# ---------------------
+
+def run_page(page_name):
+    if page_name == "Home":
+        Home(Page_Login, Page_Register, Page_FindPW)
+    elif page_name == "Login":
+        Login()
+    elif page_name == "Register":
+        Register(Page_Login.url_path)
+    elif page_name == "Find PW":
+        FindPassword()
+    elif page_name == "My Info":
+        UserInfo()
+    elif page_name == "Logout":
+        Logout()
+    elif page_name == "EDA":
+        EDA()
+
+if st.session_state.logged_in:
+    menu_options = ["Home", "My Info", "Logout", "EDA"]
+else:
+    menu_options = ["Home", "Login", "Register", "Find PW"]
+
+selected_menu = st.sidebar.radio("메뉴 선택", menu_options)
+
+# 페이지별 클래스/함수 실행
+run_page(selected_menu)
