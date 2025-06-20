@@ -42,6 +42,8 @@ if "logged_in" not in st.session_state:
 # ---------------------
 class Home:
     def __init__(self, login_page, register_page, findpw_page):
+        import streamlit as st
+
         st.title("🏠 Home")
         if st.session_state.get("logged_in"):
             st.success(f"{st.session_state.get('user_email')}님 환영합니다.")
@@ -71,6 +73,18 @@ class Home:
 
         > 📥 좌측 메뉴 또는 아래 업로더를 통해 population_trends.csv 파일을 업로드하면, 탭별 분석 결과를 확인할 수 있습니다.
         """)
+
+        # 여기서 업로더 추가
+        uploaded_file = st.file_uploader("📂 population_trends.csv 파일을 업로드해주세요", type=["csv"])
+
+        if uploaded_file is not None:
+            import pandas as pd
+            df = pd.read_csv(uploaded_file)
+            st.success("파일이 성공적으로 업로드되었습니다.")
+            st.write(df.head())  # 간단히 데이터 샘플 보여주기
+        else:
+            st.info("파일을 업로드해야 분석이 가능합니다.")
+
 
         
 
